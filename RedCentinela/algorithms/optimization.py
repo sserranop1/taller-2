@@ -77,14 +77,15 @@ def hill_climbing(
     )
 
 
-def cooling_schedule(initial_temperature: float, cooling_rate: float, iteration: int) -> float:
+def cooling_schedule(
+    initial_temperature: float,
+    cooling_rate: float,
+    iteration: int
+) -> float:
     """
     Retorna el programa geométrico T(t) = T0 * alpha**t.
-
-    Esta función se invoca desde simulated_annealing en cada iteración.
     """
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 2: implemente cooling_schedule")
+    return initial_temperature * (cooling_rate ** iteration)
 
 
 def simulated_annealing(
@@ -97,26 +98,75 @@ def simulated_annealing(
 ) -> OptimizationResult:
     """
     Ejecuta recocido simulado para un problema de maximización.
-
     Debe proponer un vecino aleatorio por iteración, aceptar siempre las
     mejoras y aplicar exp(delta / temperature) en los demás casos. El estado
     actual y el mejor estado encontrado deben conservarse por separado.
-
-    Tips:
-    - Seleccione el candidato con rng.choice(problem.neighbors(current)) y use
-      exclusivamente rng para conservar la reproducibilidad.
-    - Obtenga la temperatura con cooling_schedule(...) y calcule la aceptación
-      con delta = puntaje_candidato - puntaje_actual y math.exp(...).
-    - Mantenga separados el estado actual y el mejor encontrado; registre el
-      estado actual después de cada intento, incluso si se rechaza.
-    - Detenga la ejecución cuando la temperatura alcance minimum_temperature.
     """
     rng = rng or random.Random()
     minimum_temperature = 1e-9
 
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 2: implemente simulated_annealing")
+    current = initial_configuration
+    current_score = configuration_score(problem, current)
 
+    best = current
+    best_score = current_score
+
+    evaluations = 1
+    iterations = 0
+
+    history = [current]
+    score_history = [current_score]
+
+    for iteration in range(max_iterations):
+
+        temperature = cooling_schedule(
+            initial_temperature,
+            cooling_rate,
+            iteration,
+        )
+
+        if temperature <= minimum_temperature:
+            break
+
+        neighbors = problem.neighbors(current)
+
+        if not neighbors:
+            break
+
+        candidate = rng.choice(neighbors)
+
+        candidate_score = configuration_score(problem, candidate)
+        evaluations += 1
+
+        delta = candidate_score - current_score
+
+        if delta > 0:
+            accepted = True
+        else:
+            acceptance_probability = math.exp(delta / temperature)
+            accepted = rng.random() < acceptance_probability
+
+        if accepted:
+            current = candidate
+            current_score = candidate_score
+
+            if current_score > best_score:
+                best = current
+                best_score = current_score
+
+        iterations += 1
+
+        history.append(current)
+        score_history.append(current_score)
+
+    return OptimizationResult(
+        best_configuration=best,
+        best_score=best_score,
+        evaluations=evaluations,
+        iterations=iterations,
+        history=history,
+        score_history=score_history,
+    )
 
 def one_point_crossover(
     parent1: Configuration, parent2: Configuration, rng: random.Random
