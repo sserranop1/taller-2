@@ -133,15 +133,114 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         Retorna la acción de Minimax aplicando poda alfa-beta.
 
-        Debe usar la misma profundidad, orden de acciones y función de
-        evaluación que Minimax.
-
-        Tips:
-        - Conserve la misma estructura y casos base de MinimaxAgent.
-        - Inicie alpha en -infinito y beta en +infinito, y páselos en las
-          llamadas recursivas.
-        - En MAX actualice alpha y corte si valor >= beta; en MIN actualice beta
-          y corte si valor <= alpha.
+        Usa la misma profundidad, orden de acciones y función de evaluación
+        que Minimax, por lo que selecciona la misma acción en la raíz.
         """
-        # TODO: Add your code here
-        raise NotImplementedError("Punto 5: implemente AlphaBetaAgent.get_action")
+        self.nodes_evaluated = 0
+
+        def alpha_beta(current_state, agent_index, depth, alpha, beta):
+            self.nodes_evaluated += 1
+
+            if (
+                current_state.is_win()
+                or current_state.is_lose()
+                or depth == self.depth
+            ):
+                return evaluation_function(current_state)
+
+            actions = current_state.get_legal_actions(agent_index)
+
+            if not actions:
+                return evaluation_function(current_state)
+
+            next_agent = (
+                agent_index + 1
+            ) % current_state.get_num_agents()
+
+            if agent_index == 0:
+                value = float("-inf")
+
+                for action in actions:
+                    successor = current_state.generate_successor(
+                        agent_index, action
+                    )
+
+                    child_value = alpha_beta(
+                        successor,
+                        next_agent,
+                        depth + 1,
+                        alpha,
+                        beta
+                    )
+
+                    if child_value > value:
+                        value = child_value
+
+                    if value >= beta:
+                        return value
+
+                    if value > alpha:
+                        alpha = value
+
+                return value
+
+            value = float("inf")
+
+            for action in actions:
+                successor = current_state.generate_successor(
+                    agent_index, action
+                )
+
+                child_value = alpha_beta(
+                    successor,
+                    next_agent,
+                    depth + 1,
+                    alpha,
+                    beta
+                )
+
+                if child_value < value:
+                    value = child_value
+
+                if value <= alpha:
+                    return value
+
+                if value < beta:
+                    beta = value
+
+            return value
+
+        self.nodes_evaluated += 1
+
+        if state.is_win() or state.is_lose():
+            return None
+
+        actions = state.get_legal_actions(0)
+
+        if not actions:
+            return None
+
+        best_action = actions[0]
+        best_value = float("-inf")
+        alpha = float("-inf")
+        beta = float("inf")
+
+        for action in actions:
+            successor = state.generate_successor(0, action)
+
+            value = alpha_beta(
+                successor,
+                1,
+                1,
+                alpha,
+                beta
+            )
+
+            if value > best_value:
+                best_value = value
+                best_action = action
+
+            if best_value > alpha:
+                alpha = best_value
+
+        return best_action
